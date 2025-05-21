@@ -14,7 +14,8 @@ from rich.progress import TimeRemainingColumn
 
 import babeldoc.assets.assets
 import babeldoc.high_level
-from babeldoc.document_il.translator.translator import OpenAITranslator
+#from babeldoc.document_il.translator.translator import OpenAITranslator
+from babeldoc.document_il.translator.translator import DummyTranslator
 from babeldoc.document_il.translator.translator import set_translate_rate_limiter
 from babeldoc.docvision.doclayout import DocLayoutModel
 from babeldoc.docvision.rpc_doclayout import RpcDocLayoutModel
@@ -95,7 +96,7 @@ def create_parser():
     translation_group.add_argument(
         "--lang-out",
         "-lo",
-        default="zh",
+        default="en",
         help="The code of target language.",
     )
     translation_group.add_argument(
@@ -277,26 +278,34 @@ async def main():
         return
 
     # 验证翻译服务选择
-    if not args.openai:
-        parser.error("必须选择一个翻译服务：--openai")
+    # if not args.openai:
+    #     parser.error("必须选择一个翻译服务：--openai")
 
-    # 验证 OpenAI 参数
-    if args.openai and not args.openai_api_key:
-        parser.error("使用 OpenAI 服务时必须提供 API key")
+    # # 验证 OpenAI 参数
+    # if args.openai and not args.openai_api_key:
+    #     parser.error("使用 OpenAI 服务时必须提供 API key")
 
     # 实例化翻译器
-    if args.openai:
-        translator = OpenAITranslator(
-            lang_in=args.lang_in,
-            lang_out=args.lang_out,
-            model=args.openai_model,
-            base_url=args.openai_base_url,
-            api_key=args.openai_api_key,
-            ignore_cache=args.ignore_cache,
-        )
-    else:
-        raise ValueError("Invalid translator type")
+    # if args.openai:
+    #     translator = OpenAITranslator(
+    #         lang_in=args.lang_in,
+    #         lang_out=args.lang_out,
+    #         model=args.openai_model,
+    #         base_url=args.openai_base_url,
+    #         api_key=args.openai_api_key,
+    #         ignore_cache=args.ignore_cache,
+    #     )
+    # else:
+    #     raise ValueError("Invalid translator type")
+    #translator = OpenAITranslator(
+    
+    translator = DummyTranslator(
+        lang_in=args.lang_in,
+        lang_out=args.lang_out,
+        ignore_cache=args.ignore_cache,
+    )
 
+    print('main():translator:',translator)
     # 设置翻译速率限制
     set_translate_rate_limiter(args.qps)
 
@@ -391,7 +400,8 @@ async def main():
             ocr_workaround=args.ocr_workaround,
             custom_system_prompt=args.custom_system_prompt,
         )
-
+        #SVC
+        print('translator.config:', config.translator)
         # Create progress handler
         progress_context, progress_handler = create_progress_handler(config)
 
@@ -408,9 +418,9 @@ async def main():
                     result = event["translate_result"]
                     logger.info(str(result))
                     break
-    logger.info(f"Total tokens: {translator.token_count.value}")
-    logger.info(f"Prompt tokens: {translator.prompt_token_count.value}")
-    logger.info(f"Completion tokens: {translator.completion_token_count.value}")
+    # logger.info(f"Total tokens: {translator.token_count.value}")
+    # logger.info(f"Prompt tokens: {translator.prompt_token_count.value}")
+    # logger.info(f"Completion tokens: {translator.completion_token_count.value}")
 
 
 def create_progress_handler(translation_config: TranslationConfig):

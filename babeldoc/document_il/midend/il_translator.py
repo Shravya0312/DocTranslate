@@ -201,12 +201,14 @@ class ILTranslator:
             self.tokenizer = tokenizer
 
         self.support_llm_translate = False
-        try:
-            if translate_engine and hasattr(translate_engine, "do_llm_translate"):
-                translate_engine.do_llm_translate(None)
-                self.support_llm_translate = True
-        except NotImplementedError:
-            self.support_llm_translate = False
+        print('ILTranslator:', self.translate_engine)
+        # SVC
+        # try:
+        #     if translate_engine and hasattr(translate_engine, "llm_translate"):
+        #         translate_engine.llm_translate(None)
+        #         self.support_llm_translate = True
+        # except NotImplementedError:
+        #     self.support_llm_translate = False
 
     def calc_token_count(self, text: str) -> int:
         try:
@@ -216,7 +218,8 @@ class ILTranslator:
 
     def translate(self, docs: Document):
         tracker = DocumentTranslateTracker()
-
+        #SVC
+        #print('il_translator:translate()')
         if not self.translation_config.shared_context_cross_split_part.first_paragraph:
             # Try to find the first title paragraph
             title_paragraph = self.find_title_paragraph(docs)
@@ -848,6 +851,8 @@ Now, please carefully read the following text to be translated and directly outp
         local_title_paragraph: PdfParagraph | None = None,
     ):
         """Translate a paragraph using pre and post processing functions."""
+        #SVC
+        #print('il_translator:translate_paragraph()')
         self.translation_config.raise_if_cancelled()
         with PbarContext(pbar):
             try:
@@ -859,25 +864,28 @@ Now, please carefully read the following text to be translated and directly outp
                     return
                 llm_translate_tracker = tracker.new_llm_translate_tracker()
                 # Perform translation
-                if self.support_llm_translate:
-                    llm_prompt = self.generate_prompt_for_llm(
-                        text, title_paragraph, local_title_paragraph, translate_input
-                    )
-                    llm_translate_tracker.set_input(llm_prompt)
-                    translated_text = self.translate_engine.llm_translate(
-                        llm_prompt,
-                        rate_limit_params={
-                            "paragraph_token_count": paragraph_token_count
-                        },
-                    )
-                    llm_translate_tracker.set_output(translated_text)
-                else:
-                    translated_text = self.translate_engine.translate(
-                        text,
-                        rate_limit_params={
-                            "paragraph_token_count": paragraph_token_count
-                        },
-                    )
+                # if self.support_llm_translate:
+                #     llm_prompt = self.generate_prompt_for_llm(
+                #         text, title_paragraph, local_title_paragraph, translate_input
+                #     )
+                #     llm_translate_tracker.set_input(llm_prompt)
+                    
+                #     translated_text = self.translate_engine.llm_translate(
+                #         llm_prompt,
+                #         rate_limit_params={
+                #             "paragraph_token_count": paragraph_token_count
+                #         },
+                #     )
+                #     llm_translate_tracker.set_output(translated_text)
+                # else:
+                    #SVC
+                    #print('from il_translator:calling translate engine: translate',self.translate_engine)
+                translated_text = self.translate_engine.translate(
+                    text,
+                    rate_limit_params={
+                        "paragraph_token_count": paragraph_token_count
+                    },
+                )
                 translated_text = re.sub(r"[. 。…，]{20,}", ".", translated_text)
 
                 # Post-translation processing

@@ -111,6 +111,9 @@ class BaseTranslator(ABC):
         :param text: text to translate
         :return: translated text
         """
+           #SVC
+        
+     
         self.translate_call_count += 1
         if not (self.ignore_cache or ignore_cache):
             cache = self.cache.get(text)
@@ -121,6 +124,7 @@ class BaseTranslator(ABC):
         translation = self.do_translate(text, rate_limit_params)
         if not (self.ignore_cache or ignore_cache):
             self.cache.set(text, translation)
+        
         return translation
 
     def llm_translate(self, text, ignore_cache=False, rate_limit_params: dict = None):
@@ -156,7 +160,12 @@ class BaseTranslator(ABC):
         Actual translate text, override this method
         :param text: text to translate
         :return: translated text
+        
         """
+
+        #SVC
+        #print('BaseTranslator:do_translate()')
+     
         logger.critical(
             f"Do not call BaseTranslator.do_translate. "
             f"Translator: {self}. "
@@ -165,7 +174,9 @@ class BaseTranslator(ABC):
         raise NotImplementedError
 
     def __str__(self):
-        return f"{self.name} {self.lang_in} {self.lang_out} {self.model}"
+        #SVC 
+        #return f"{self.name} {self.lang_in} {self.lang_out} {self.model}"
+        return f"{self.name} {self.lang_in} {self.lang_out} "
 
     def get_rich_text_left_placeholder(self, placeholder_id: int):
         return f"<b{placeholder_id}>"
@@ -192,15 +203,15 @@ class OpenAITranslator(BaseTranslator):
     ):
         super().__init__(lang_in, lang_out, ignore_cache)
         self.options = {"temperature": 0}  # 随机采样可能会打断公式标记
-        self.client = openai.OpenAI(
-            base_url=base_url,
-            api_key=api_key,
-            http_client=httpx.Client(
-                limits=httpx.Limits(
-                    max_connections=None, max_keepalive_connections=None
-                )
-            ),
-        )
+        # self.client = openai.OpenAI(
+        #     base_url=base_url,
+        #     api_key=api_key,
+        #     http_client=httpx.Client(
+        #         limits=httpx.Limits(
+        #             max_connections=None, max_keepalive_connections=None
+        #         )
+        #     ),
+        # )
         self.add_cache_impact_parameters("temperature", self.options["temperature"])
         self.model = model
         self.add_cache_impact_parameters("model", self.model)
@@ -219,13 +230,15 @@ class OpenAITranslator(BaseTranslator):
         ),
     )
     def do_translate(self, text, rate_limit_params: dict = None) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            **self.options,
-            messages=self.prompt(text),
-        )
-        self.update_token_count(response)
-        return response.choices[0].message.content.strip()
+        # response = self.client.chat.completions.create(
+        #     model=self.model,
+        #     **self.options,
+        #     messages=self.prompt(text),
+        # )
+        # self.update_token_count(response)
+        # return response.choices[0].message.content.strip()
+        print("openai:translator: do_translate")
+        return text
 
     def prompt(self, text):
         return [
@@ -249,22 +262,77 @@ class OpenAITranslator(BaseTranslator):
         ),
     )
     def do_llm_translate(self, text, rate_limit_params: dict = None):
-        if text is None:
-            return None
+        # if text is None:
+        #     return None
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            **self.options,
-            max_tokens=2048,
-            messages=[
-                {
-                    "role": "user",
-                    "content": text,
-                },
-            ],
+        # response = self.client.chat.completions.create(
+        #     model=self.model,
+        #     **self.options,
+        #     max_tokens=2048,
+        #     messages=[
+        #         {
+        #             "role": "user",
+        #             "content": text,
+        #         },
+        #     ],
+        # )
+        # self.update_token_count(response)
+        # return response.choices[0].message.content.strip()
+        print("openAItranslator: do_llm_translate")
+        return text
+
+    def update_token_count(self, response):
+        try:
+            if response.usage and response.usage.total_tokens:
+                self.token_count.inc(response.usage.total_tokens)
+            if response.usage and response.usage.prompt_tokens:
+                self.prompt_token_count.inc(response.usage.prompt_tokens)
+            if response.usage and response.usage.completion_tokens:
+                self.completion_token_count.inc(response.usage.completion_tokens)
+        except Exception as e:
+            logger.exception("Error updating token count")
+
+    def get_formular_placeholder(self, placeholder_id: int):
+        return "{v" + str(placeholder_id) + "}", f"{{\\s*v\\s*{placeholder_id}\\s*}}"
+        return "{{" + str(placeholder_id) + "}}"
+
+    def get_rich_text_left_placeholder(self, placeholder_id: int):
+        return (
+            f"<style id='{placeholder_id}'>",
+            f"<\\s*style\\s*id\\s*=\\s*'\\s*{placeholder_id}\\s*'\\s*>",
         )
-        self.update_token_count(response)
-        return response.choices[0].message.content.strip()
+
+    def get_rich_text_right_placeholder(self, placeholder_id: int):
+        return "</style>", r"<\s*\/\s*style\s*>"
+
+
+class DummyTranslator(BaseTranslator):
+    
+    name = "dummy"
+
+    def __init__(
+        self,
+        lang_in,
+        lang_out,
+        ignore_cache=False,
+    ):
+        super().__init__(lang_in, lang_out, ignore_cache)
+
+      
+    def do_translate(self, text, rate_limit_params: dict = None) -> str:
+
+        #print('Inside DummyTranslator:do_translate()')
+        if text:
+            return text[1:]
+        return None
+
+
+    def do_llm_translate(self, text, rate_limit_params: dict = None):
+        
+        #print('Inside DummyTranslator:do_llm_translate()')
+        if text:
+            return text[1:]
+        return None
 
     def update_token_count(self, response):
         try:

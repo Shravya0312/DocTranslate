@@ -736,17 +736,22 @@ def _do_translate_single(
         )
 
     translate_engine = translation_config.translator
-
+    # SVC
+    print('highlevel: translate_engine:', translate_engine)
     support_llm_translate = False
-    try:
-        if translate_engine and hasattr(translate_engine, "do_llm_translate"):
-            translate_engine.do_llm_translate(None)
-            support_llm_translate = True
-    except NotImplementedError:
-        support_llm_translate = False
+#     try:
+#         if translate_engine and hasattr(translate_engine, "do_llm_translate"):
+#             translate_engine.do_llm_translate(None)
+# # SVC            support_llm_translate = True
+#             support_llm_translate = False
+#     except NotImplementedError:
+#         support_llm_translate = False
+
     if support_llm_translate:
+        print('calling ILTranslatorLLMOnly')
         il_translator = ILTranslatorLLMOnly(translate_engine, translation_config)
     else:
+        print('calling ILTranslator')
         il_translator = ILTranslator(translate_engine, translation_config)
 
     il_translator.translate(docs)

@@ -62,7 +62,8 @@ class TranslationConfig:
         min_text_length: int = 5,
         use_side_by_side_dual: bool = True,  # Deprecated: 是否使用拼版式双语 PDF（并排显示原文和译文）向下兼容选项，已停用。
         use_alternating_pages_dual: bool = False,
-        watermark_output_mode: WatermarkOutputMode = WatermarkOutputMode.Watermarked,
+        #watermark_output_mode: WatermarkOutputMode = WatermarkOutputMode.Watermarked,
+        watermark_output_mode: WatermarkOutputMode = WatermarkOutputMode.NoWatermark,
         # Add split-related parameters
         split_strategy: BaseSplitStrategy | None = None,
         table_model=None,
